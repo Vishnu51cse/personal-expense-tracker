@@ -1,0 +1,116 @@
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card auth-card shadow-sm p-4 bg-white">
+            <div class="text-center mb-4">
+                <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 56px; height: 56px;">
+                    <i class="bi bi-lock-fill fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Welcome Back</h3>
+                <p class="text-muted small">Sign in to access your personal expense dashboard</p>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-3">
+                    <label for="usernameOrEmail" class="form-label fw-semibold">Username or Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="usernameOrEmail" placeholder="Enter username or email" required autofocus />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                        <input type="password" class="form-control" id="password" placeholder="Enter password" required />
+                    </div>
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <span id="loginSpinner" class="spinner-border spinner-border-sm me-1 d-none" role="status"></span>
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </form>
+
+            <hr class="my-4 text-muted" />
+
+            <div class="text-center">
+                <p class="small text-muted mb-0">
+                    Don't have an account? 
+                    <a href="/Account/Register" class="text-primary fw-semibold text-decoration-none">Create an account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // If already logged in, redirect to Dashboard
+            Auth.redirectIfAuthenticated();
+        });
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const usernameOrEmail = document.getElementById("usernameOrEmail").value.trim();
+            const password = document.getElementById("password").value;
+            const errorDiv = document.getElementById("loginError");
+            const loginBtn = document.getElementById("loginBtn");
+            const spinner = document.getElementById("loginSpinner");
+
+            errorDiv.classList.add("d-none");
+            errorDiv.textContent = "";
+
+            if (!usernameOrEmail || !password) {
+                errorDiv.textContent = "Please fill in all fields.";
+                errorDiv.classList.remove("d-none");
+                return;
+            }
+
+            loginBtn.disabled = true;
+            spinner.classList.remove("d-none");
+
+            try {
+                const response = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ usernameOrEmail, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Login failed. Please check your credentials.");
+                }
+
+                // Save JWT and user metadata to sessionStorage
+                Auth.saveAuth(data.token, {
+                    userId: data.userId,
+                    username: data.username,
+                    email: data.email
+                });
+
+                // Check for returnUrl or default to expense dashboard
+                const urlParams = new URLSearchParams(window.location.search);
+                const returnUrl = urlParams.get("returnUrl") || "/Expense/Index";
+                window.location.href = returnUrl;
+
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.classList.remove("d-none");
+            } finally {
+                loginBtn.disabled = false;
+                spinner.classList.add("d-none");
+            }
+        }
+    </script>
+}

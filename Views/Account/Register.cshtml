@@ -1,0 +1,130 @@
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card auth-card shadow-sm p-4 bg-white">
+            <div class="text-center mb-4">
+                <div class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 56px; height: 56px;">
+                    <i class="bi bi-person-plus-fill fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Create Account</h3>
+                <p class="text-muted small">Start tracking your expenses with secured JWT authentication</p>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="registerError" class="alert alert-danger d-none" role="alert"></div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-semibold">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="username" placeholder="Choose a username (min 3 chars)" required minlength="3" maxlength="50" autofocus />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" placeholder="name@example.com" required maxlength="100" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-semibold">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                        <input type="password" class="form-control" id="password" placeholder="At least 6 characters" required minlength="6" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirmPassword" class="form-label fw-semibold">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-check2-circle"></i></span>
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="Re-enter your password" required minlength="6" />
+                    </div>
+                </div>
+
+                <button type="submit" id="registerBtn" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <span id="registerSpinner" class="spinner-border spinner-border-sm me-1 d-none" role="status"></span>
+                    <i class="bi bi-person-check me-1"></i> Register &amp; Start
+                </button>
+            </form>
+
+            <hr class="my-4 text-muted" />
+
+            <div class="text-center">
+                <p class="small text-muted mb-0">
+                    Already have an account? 
+                    <a href="/Account/Login" class="text-primary fw-semibold text-decoration-none">Sign in here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            Auth.redirectIfAuthenticated();
+        });
+
+        async function handleRegister(e) {
+            e.preventDefault();
+
+            const username = document.getElementById("username").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const errorDiv = document.getElementById("registerError");
+            const registerBtn = document.getElementById("registerBtn");
+            const spinner = document.getElementById("registerSpinner");
+
+            errorDiv.classList.add("d-none");
+            errorDiv.textContent = "";
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = "Passwords do not match.";
+                errorDiv.classList.remove("d-none");
+                return;
+            }
+
+            registerBtn.disabled = true;
+            spinner.classList.remove("d-none");
+
+            try {
+                const response = await fetch("/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email, password, confirmPassword })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Registration failed.");
+                }
+
+                // Automatically save token and log in
+                Auth.saveAuth(data.token, {
+                    userId: data.userId,
+                    username: data.username,
+                    email: data.email
+                });
+
+                window.location.href = "/Expense/Index";
+
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.classList.remove("d-none");
+            } finally {
+                registerBtn.disabled = false;
+                spinner.classList.add("d-none");
+            }
+        }
+    </script>
+}

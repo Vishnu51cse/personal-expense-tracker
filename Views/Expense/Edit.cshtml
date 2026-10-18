@@ -1,0 +1,172 @@
+@{
+    ViewData["Title"] = "Edit Expense";
+    var expenseId = ViewBag.ExpenseId;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-pencil-square text-primary me-2"></i>Edit Expense #@expenseId
+            </h3>
+            <a href="/Expense/Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <div class="card shadow-sm p-4 bg-white">
+            <div id="editExpenseError" class="alert alert-danger d-none" role="alert"></div>
+
+            <!-- Loading Spinner -->
+            <div id="editLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted small mt-2">Loading expense details...</p>
+            </div>
+
+            <form id="editExpenseForm" class="d-none" onsubmit="handleUpdateExpense(event)">
+                <div class="mb-3">
+                    <label for="editTitle" class="form-label fw-semibold">Title</label>
+                    <input type="text" class="form-control" id="editTitle" required maxlength="100" />
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label for="editAmount" class="form-label fw-semibold">Amount (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" step="0.01" min="0.01" max="10000000" class="form-control" id="editAmount" required />
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="editCategory" class="form-label fw-semibold">Category</label>
+                        <select id="editCategory" class="form-select" required>
+                            <option value="">-- Loading Categories --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="editDate" class="form-label fw-semibold">Date Incurred</label>
+                    <input type="date" class="form-control" id="editDate" required />
+                </div>
+
+                <div class="mb-4">
+                    <label for="editDescription" class="form-label fw-semibold">Description <span class="text-muted fw-normal">(Optional)</span></label>
+                    <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger" onclick="handleDeleteCurrent()">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                    <div class="d-flex gap-2">
+                        <a href="/Expense/Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" id="submitEditBtn" class="btn btn-primary px-4 fw-semibold">
+                            <span id="submitEditSpinner" class="spinner-border spinner-border-sm me-1 d-none" role="status"></span>
+                            <i class="bi bi-check-lg me-1"></i> Update Expense
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/expense.js" asp-append-version="true"></script>
+    <script>
+        const expenseId = @expenseId;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (!Auth.requireAuth()) return;
+            await loadExpenseData();
+        });
+
+        async function loadExpenseData() {
+            const loading = document.getElementById("editLoading");
+            const form = document.getElementById("editExpenseForm");
+            const errorDiv = document.getElementById("editExpenseError");
+
+            try {
+                // Fetch existing categories
+                await ExpenseApp.loadCategories("editCategory");
+
+                // Fetch expense by ID
+                const response = await Auth.fetchWithAuth(`/api/expenses/${expenseId}`);
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.message || `Expense #${expenseId} could not be loaded.`);
+                }
+
+                const expense = await response.json();
+
+                // Populate fields
+                document.getElementById("editTitle").value = expense.title;
+                document.getElementById("editAmount").value = expense.amount;
+                document.getElementById("editCategory").value = expense.category;
+                document.getElementById("editDate").value = expense.date.split("T")[0];
+                document.getElementById("editDescription").value = expense.description || "";
+
+                loading.classList.add("d-none");
+                form.classList.remove("d-none");
+
+            } catch (err) {
+                loading.classList.add("d-none");
+                errorDiv.textContent = err.message;
+                errorDiv.classList.remove("d-none");
+            }
+        }
+
+        async function handleUpdateExpense(e) {
+            e.preventDefault();
+
+            const title = document.getElementById("editTitle").value.trim();
+            const amount = parseFloat(document.getElementById("editAmount").value);
+            const category = document.getElementById("editCategory").value;
+            const date = document.getElementById("editDate").value;
+            const description = document.getElementById("editDescription").value.trim();
+            const errorDiv = document.getElementById("editExpenseError");
+            const btn = document.getElementById("submitEditBtn");
+            const spinner = document.getElementById("submitEditSpinner");
+
+            errorDiv.classList.add("d-none");
+            errorDiv.textContent = "";
+
+            if (!title || isNaN(amount) || amount <= 0 || !category || !date) {
+                errorDiv.textContent = "Please fill in all required fields.";
+                errorDiv.classList.remove("d-none");
+                return;
+            }
+
+            btn.disabled = true;
+            spinner.classList.remove("d-none");
+
+            try {
+                const response = await Auth.fetchWithAuth(`/api/expenses/${expenseId}`, {
+                    method: "PUT",
+                    body: JSON.stringify({ title, amount, category, date, description })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.message || "Failed to update expense.");
+                }
+
+                window.location.href = "/Expense/Index";
+
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.classList.remove("d-none");
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add("d-none");
+            }
+        }
+
+        async function handleDeleteCurrent() {
+            const title = document.getElementById("editTitle").value;
+            await ExpenseApp.deleteExpense(expenseId, title);
+            window.location.href = "/Expense/Index";
+        }
+    </script>
+}

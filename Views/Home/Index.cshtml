@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Welcome";
+}
+
+<div class="row align-items-center py-5">
+    <div class="col-lg-7">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold mb-3">
+            <i class="bi bi-shield-lock-fill me-1"></i> JWT Bearer Secured &bull; EF Core &bull; SQL Server
+        </span>
+        <h1 class="display-4 fw-bold text-dark mb-3">
+            Smart, Simple Personal <span class="text-primary">Expense Tracking</span>
+        </h1>
+        <p class="lead text-muted mb-4">
+            Take full control of your daily finances with an enterprise-grade ASP.NET Core MVC architecture.
+            Track your spending, filter by category, and review real-time financial summaries protected with JSON Web Tokens.
+        </p>
+
+        <div class="d-flex gap-3 mb-4" id="homeCtaButtons">
+            <a href="/Expense/Index" class="btn btn-primary btn-lg px-4 shadow-sm">
+                <i class="bi bi-speedometer2 me-2"></i> Open Dashboard
+            </a>
+            <a href="/Account/Register" class="btn btn-outline-secondary btn-lg px-4" id="homeRegisterBtn">
+                <i class="bi bi-person-plus me-2"></i> Create Account
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 p-4 bg-white rounded-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-layers text-primary me-2"></i> System Architecture</h5>
+            <ul class="list-unstyled mb-0">
+                <li class="d-flex align-items-start mb-3">
+                    <span class="badge bg-success-subtle text-success p-2 rounded-circle me-3"><i class="bi bi-check2"></i></span>
+                    <div>
+                        <strong>ASP.NET Core MVC &amp; Razor</strong>
+                        <p class="text-muted small mb-0">Server-rendered views with responsive Bootstrap 5 layout.</p>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start mb-3">
+                    <span class="badge bg-primary-subtle text-primary p-2 rounded-circle me-3"><i class="bi bi-shield-check"></i></span>
+                    <div>
+                        <strong>Genuine JWT Bearer Authentication</strong>
+                        <p class="text-muted small mb-0">Stateless signed claims tokens for secure API communication.</p>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start mb-3">
+                    <span class="badge bg-info-subtle text-info p-2 rounded-circle me-3"><i class="bi bi-database-check"></i></span>
+                    <div>
+                        <strong>EF Core &amp; Microsoft SQL Server</strong>
+                        <p class="text-muted small mb-0">Code-first migrations with strict per-user multi-tenant isolation.</p>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start">
+                    <span class="badge bg-warning-subtle text-warning p-2 rounded-circle me-3"><i class="bi bi-box-seam"></i></span>
+                    <div>
+                        <strong>Dependency Injection</strong>
+                        <p class="text-muted small mb-0">Clean separation of concerns with AddScoped services.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (Auth.isAuthenticated()) {
+                const regBtn = document.getElementById("homeRegisterBtn");
+                if (regBtn) {
+                    regBtn.textContent = "Add Expense";
+                    regBtn.href = "/Expense/Create";
+                    regBtn.className = "btn btn-outline-primary btn-lg px-4";
+                }
+            }
+        });
+    </script>
+}

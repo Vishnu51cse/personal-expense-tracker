@@ -1,0 +1,41 @@
+## .gitignore for ASP.NET Core & .NET
+
+# Build and Compilation Artifacts
+bin/
+obj/
+out/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio / VS Code Cache and Settings
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.ide/
+
+# Environment and Secrets (avoid committing production secrets)
+appsettings.Production.json
+*.local.json
+.env
+
+# Database files
+*.mdf
+*.ldf
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# OS specific files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary and Log files
+*.log
+*.tmp
+_ReSharper*/
